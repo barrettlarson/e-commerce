@@ -24,22 +24,31 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
     try {
-        const { name, price, condition, category, images } = req.body;
-        if (!name || !price || !condition || !category || !images) {
-            return res.status(400).json({ message: 'Name, price, and category are required.' });
+        const { name, description, price, condition, category, images, brand, slug } = req.body;
+
+        if (!name || !price || !category || !images || images.length === 0) {
+            return res.status(400).json({ message: 'Name, price, and category, and images are required.' });
         }
+
+        const priceNum = Number(price);
+        if (Number.isNaN(priceNum)) {
+            return res.status(400).json({ message: 'Price must be a number.' });
+        }
+
+        const makeSlug = s => s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+        const finalSlug = slug && typeof slug === 'string' ? slug : makeSlug(name);
+
         const newProduct = await product.create({
             name,
-            slug,
-            images,
-            brand,
-            description,
-            price,
-            condition,
-            category,
-            createdAt,
-            updatedAt,
+            slug: finalSlug,
+            images: images || [],
+            brand: brand || '',
+            description: description || '',
+            price: priceNum,
+            condition: condition || '',
+            category
         });
+
         res.status(201).json(newProduct);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -48,9 +57,9 @@ const createProduct = async (req, res) => {
 
 const removeProduct = async (req, res) => {
     try {
-        const proudct = await product.findById(req.params.id);
-        if (!product) {
-            res.status(404).json({ message: 'Product not found' });
+        const found = await product.findById(req.params.id);
+        if (!found) {
+            return res.status(404).json({ message: 'Product not found' });
         }
         await product.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: 'Product deleted successfully' });
@@ -61,14 +70,37 @@ const removeProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
     try {
-        const updatedProduct = await product.getProductByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedProduct) {
-            return res.status(404).json({ message: 'Product not found' });
+        const allowed = ['name', 'description', 'price', 'condition', 'category', 'images', 'brand', 'slug'];
+        const updates = {};
+        for (const key of allowed) {
+            if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = req.body[key];
         }
-        res.status(200).json(updatedProduct);
+
+        if (updates.price !== undefined) {
+            const priceNum = Number(updates.price);
+            if (Number.isNaN(priceNum)) {
+                return res.status(400).json({ message: 'Price must be a number.' });
+            }
+            updates.price = priceNum;
+        }
+
+        if (updates.name && !updates.slug) {
+            updates.slug = updates.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+        }
+
+        const updated = await product.findByIdAndUpdate(req.params.id, updates, { new: true });
+        if (!updated) return res.status(404).json({ message: 'Product not found' });
+
+        res.status(200).json(updated);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-// TODO: Quality check methods above for consistency and error handling
+module.exports = {
+    getAllProducts,
+    getProductById,
+    createProduct,
+    removeProduct,
+    updateProduct
+};

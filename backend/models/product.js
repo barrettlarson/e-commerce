@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+function toSlug(s) {
+  return s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+}
+
 const productSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -8,16 +12,17 @@ const productSchema = new mongoose.Schema({
     slug: {
         type: String,
         unique: true,
+        index: true
     },
     images: [{
         type: String,
+        required: true,
     }],
     brand: {
         type: String
     },
     description: {
         type: String,
-        required: true,
     },
     price: {
         type: Number,
@@ -42,5 +47,16 @@ const productSchema = new mongoose.Schema({
         default: Date.now,
     }
 }, { timestamps: true });
+
+productSchema.pre('save', async function(next) {
+  if (!this.isModified('name')) return next();
+
+  let base = toSlug(this.name || '');
+  let slug = base || Date.now().toString(36);
+  const exists = await this.constructor.findOne({ slug, _id: { $ne: this._id } });
+  if (exists) slug = `${base}-${Date.now().toString(36).slice(-4)}`;
+  this.slug = slug;
+  next();
+});
 
 module.exports = mongoose.model('Product', productSchema);

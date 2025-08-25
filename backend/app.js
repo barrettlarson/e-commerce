@@ -1,5 +1,6 @@
 const express = require('express');
 const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 
@@ -9,6 +10,7 @@ const allowedOrigins = [
 ]
 
 const cors = require('cors');
+const product = require('./models/product');
 
 app.use(cors({
     origin(origin, cb) {
@@ -25,6 +27,7 @@ app.use(express.json());
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.use('/auth', authRoutes);
+app.use('/Product', productRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running');

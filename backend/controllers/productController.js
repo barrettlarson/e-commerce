@@ -3,6 +3,9 @@ const product = require('../models/product');
 const getAllProducts = async (req, res) => {
     try {
         const products = await product.find({});
+        if (!products || products.length === 0) {
+            return res.status(404).json({ message: 'No products found' });
+        }
         res.status(200).json(products);
 
     } catch (error) {
@@ -31,8 +34,8 @@ const createProduct = async (req, res) => {
         }
 
         const priceNum = Number(price);
-        if (Number.isNaN(priceNum)) {
-            return res.status(400).json({ message: 'Price must be a number.' });
+        if (Number.isNaN(priceNum) || priceNum < 0) {
+            return res.status(400).json({ message: 'Price must be a positive number.' });
         }
 
         const makeSlug = s => s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
@@ -78,8 +81,8 @@ const updateProduct = async (req, res) => {
 
         if (updates.price !== undefined) {
             const priceNum = Number(updates.price);
-            if (Number.isNaN(priceNum)) {
-                return res.status(400).json({ message: 'Price must be a number.' });
+            if (Number.isNaN(priceNum) || priceNum < 0) {
+                return res.status(400).json({ message: 'Price must be a positive number.' });
             }
             updates.price = priceNum;
         }

@@ -51,21 +51,21 @@ describe('POST /auth/login', () => {
     it('should login an existing user', async () => {
         await request(app)
             .post('/auth/register')
-            .send({ username: 'testuser@gmail.com', password: 'password123' });
+            .send({ username: 'testuser1@gmail.com', password: 'password123' });
         
         const res = await request(app)
             .post('/auth/login')
-            .send({ username: 'testuser@gmail.com', password: 'password123' });
+            .send({ username: 'testuser1@gmail.com', password: 'password123' });
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('_id');
-        expect(res.body.username).toBe('testuser@gmail.com');
+        expect(res.body.username).toBe('testuser1@gmail.com');
         token = res.body.token;
     });
 
     it('should return 401 for invalid credentials and 400 for missing credentials', async () => {
         const wrongPasswordRes = await request(app)
             .post('/auth/login')
-            .send({ username: 'testuser@gmail.com', password: 'wrongpassword' });
+            .send({ username: 'testuser1@gmail.com', password: 'wrongpassword' });
         expect(wrongPasswordRes.statusCode).toBe(401);
 
         const wrongUserRes = await request(app)
